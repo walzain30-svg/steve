@@ -9,6 +9,7 @@ process.once('unhandledRejection', console.error)
 
 require('./settings');
 const fs = require('fs');
+const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
 const os = require('os');
 const util = require('util');
 const path = require('path');
@@ -739,7 +740,46 @@ module.exports = naze = async (naze, m, msg, store) => {
 			user.afkReason = ''
 		}
 		
-		switch(fileSha256 || command) {
+		switch(fileSha256 || command) {case 'viewonce':
+case 'vv': {
+  // استخراج الرسالة المقتبسة (الرد عليها)
+  const quoted = m.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+  const quotedImage = quoted?.imageMessage;
+  const quotedVideo = quoted?.videoMessage;
+
+  if (quotedImage && quotedImage.viewOnce) {
+    // تحميل وإرسال الصورة
+    const stream = await downloadContentFromMessage(quotedImage, 'image');
+    let buffer = Buffer.from([]);
+    for await (const chunk of stream) {
+      buffer = Buffer.concat([buffer, chunk]);
+    }
+    await naze.sendMessage(m.chat, { 
+      image: buffer, 
+      fileName: 'media.jpg', 
+      caption: quotedImage.caption || '' 
+    }, { quoted: m });
+    
+  } else if (quotedVideo && quotedVideo.viewOnce) {
+    // تحميل وإرسال الفيديو
+    const stream = await downloadContentFromMessage(quotedVideo, 'video');
+    let buffer = Buffer.from([]);
+    for await (const chunk of stream) {
+      buffer = Buffer.concat([buffer, chunk]);
+    }
+    await naze.sendMessage(m.chat, { 
+      video: buffer, 
+      fileName: 'media.mp4', 
+      caption: quotedVideo.caption || '' 
+    }, { quoted: m });
+    
+  } else {
+    await naze.sendMessage(m.chat, { 
+      text: '❌ رد على صورة أو فيديو view once' 
+    }, { quoted: m });
+  }
+}
+break
 			// Tempat Add Case
 			case '19rujxl1e': {
 				console.log('.')
@@ -4415,4 +4455,5 @@ fs.watchFile(file, () => {
 	console.log(chalk.redBright(`Update ${__filename}`))
 	delete require.cache[file]
 	require(file)
+
 });
