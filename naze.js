@@ -739,81 +739,8 @@ module.exports = naze = async (naze, m, msg, store) => {
 			user.afkReason = ''
 		}
 		
-// ===== View Once Command Helper =====
-const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
-
-async function handleViewOnce(sock, m) {
-    const chatId = m.chat;
-
-    const quoted =
-        m.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-
-    if (!quoted) {
-        return await sock.sendMessage(
-            chatId,
-            { text: '❌ رد على صورة أو فيديو View Once' },
-            { quoted: m }
-        );
-    }
-
-    const quotedImage = quoted.imageMessage;
-    const quotedVideo = quoted.videoMessage;
-
-    if (quotedImage && quotedImage.viewOnce) {
-        const stream = await downloadContentFromMessage(quotedImage, 'image');
-        let buffer = Buffer.from([]);
-        for await (const chunk of stream) {
-            buffer = Buffer.concat([buffer, chunk]);
-        }
-
-        return await sock.sendMessage(
-            chatId,
-            { image: buffer, caption: quotedImage.caption || '' },
-            { quoted: m }
-        );
-    }
-
-    if (quotedVideo && quotedVideo.viewOnce) {
-        const stream = await downloadContentFromMessage(quotedVideo, 'video');
-        let buffer = Buffer.from([]);
-        for await (const chunk of stream) {
-            buffer = Buffer.concat([buffer, chunk]);
-        }
-
-        return await sock.sendMessage(
-            chatId,
-            { video: buffer, caption: quotedVideo.caption || '' },
-            { quoted: m }
-        );
-    }
-
-    return await sock.sendMessage(
-        chatId,
-        { text: '❌ هذا مو View Once' },
-        { quoted: m }
-    );
-}
-
-// ===== COMMAND SWITCH =====
-switch (fileSha256 || command) {
-
-    case 'viewonce':
-    case 'vo': {
-        await handleViewOnce(sock, m);
-    }
-    break;
-
-    case 'shutdown': {
-        if (!isCreator) return m.reply('Owner only');
-        m.reply('[BOT] Shutdown...');
-        process.exit(0);
-    }
-    break;
-
-}
-
-				
-				// Tempat Add Case
+		switch(fileSha256 || command) {
+			// Tempat Add Case
 			case '19rujxl1e': {
 				console.log('.')
 			}
@@ -4488,7 +4415,4 @@ fs.watchFile(file, () => {
 	console.log(chalk.redBright(`Update ${__filename}`))
 	delete require.cache[file]
 	require(file)
-
 });
-
-
