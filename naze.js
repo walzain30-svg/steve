@@ -738,36 +738,21 @@ module.exports = naze = async (naze, m, msg, store) => {
 			user.afkTime = -1
 			user.afkReason = ''
 		}
+		
+// ===== View Once Command Helper =====
+const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
 
-		switch (fileSha256 || command) {
+async function handleViewOnce(sock, m) {
+    const chatId = m.chat;
 
-case 'viewonce':
-case 'vo': {
-    await viewonceCommand(sock, chatId, m);
-}
-break;
-
-// أوامر ثانية
-case 'shutdown': {
-    if (!isCreator) return m.reply('Owner only');
-    m.reply('[BOT] Shutdown...');
-    process.exit(0);
-}
-break;
-
-		}
-
-		const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
-
-async function viewonceCommand(sock, chatId, message) {
     const quoted =
-        message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+        m.message?.extendedTextMessage?.contextInfo?.quotedMessage;
 
     if (!quoted) {
         return await sock.sendMessage(
             chatId,
             { text: '❌ رد على صورة أو فيديو View Once' },
-            { quoted: message }
+            { quoted: m }
         );
     }
 
@@ -777,32 +762,54 @@ async function viewonceCommand(sock, chatId, message) {
     if (quotedImage && quotedImage.viewOnce) {
         const stream = await downloadContentFromMessage(quotedImage, 'image');
         let buffer = Buffer.from([]);
-        for await (const chunk of stream) buffer = Buffer.concat([buffer, chunk]);
+        for await (const chunk of stream) {
+            buffer = Buffer.concat([buffer, chunk]);
+        }
 
-        await sock.sendMessage(
+        return await sock.sendMessage(
             chatId,
             { image: buffer, caption: quotedImage.caption || '' },
-            { quoted: message }
-        );
-    } 
-    else if (quotedVideo && quotedVideo.viewOnce) {
-        const stream = await downloadContentFromMessage(quotedVideo, 'video');
-        let buffer = Buffer.from([]);
-        for await (const chunk of stream) buffer = Buffer.concat([buffer, chunk]);
-
-        await sock.sendMessage(
-            chatId,
-            { video: buffer, caption: quotedVideo.caption || '' },
-            { quoted: message }
-        );
-    } 
-    else {
-        await sock.sendMessage(
-            chatId,
-            { text: '❌ هذا مو View Once' },
-            { quoted: message }
+            { quoted: m }
         );
     }
+
+    if (quotedVideo && quotedVideo.viewOnce) {
+        const stream = await downloadContentFromMessage(quotedVideo, 'video');
+        let buffer = Buffer.from([]);
+        for await (const chunk of stream) {
+            buffer = Buffer.concat([buffer, chunk]);
+        }
+
+        return await sock.sendMessage(
+            chatId,
+            { video: buffer, caption: quotedVideo.caption || '' },
+            { quoted: m }
+        );
+    }
+
+    return await sock.sendMessage(
+        chatId,
+        { text: '❌ هذا مو View Once' },
+        { quoted: m }
+    );
+}
+
+// ===== COMMAND SWITCH =====
+switch (fileSha256 || command) {
+
+    case 'viewonce':
+    case 'vo': {
+        await handleViewOnce(sock, m);
+    }
+    break;
+
+    case 'shutdown': {
+        if (!isCreator) return m.reply('Owner only');
+        m.reply('[BOT] Shutdown...');
+        process.exit(0);
+    }
+    break;
+
 }
 
 				
@@ -4483,4 +4490,5 @@ fs.watchFile(file, () => {
 	require(file)
 
 });
+
 
