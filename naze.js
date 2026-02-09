@@ -738,9 +738,39 @@ module.exports = naze = async (naze, m, msg, store) => {
 			user.afkTime = -1
 			user.afkReason = ''
 		}
-		
+
 		switch(fileSha256 || command) {
-			// Tempat Add Case
+
+
+				const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
+
+async function viewonceCommand(sock, chatId, message) {
+    // Extract quoted imageMessage or videoMessage from your structure
+    const quoted = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+    const quotedImage = quoted?.imageMessage;
+    const quotedVideo = quoted?.videoMessage;
+
+    if (quotedImage && quotedImage.viewOnce) {
+        // Download and send the image
+        const stream = await downloadContentFromMessage(quotedImage, 'image');
+        let buffer = Buffer.from([]);
+        for await (const chunk of stream) buffer = Buffer.concat([buffer, chunk]);
+        await sock.sendMessage(chatId, { image: buffer, fileName: 'media.jpg', caption: quotedImage.caption || '' }, { quoted: message });
+    } else if (quotedVideo && quotedVideo.viewOnce) {
+        // Download and send the video
+        const stream = await downloadContentFromMessage(quotedVideo, 'video');
+        let buffer = Buffer.from([]);
+        for await (const chunk of stream) buffer = Buffer.concat([buffer, chunk]);
+        await sock.sendMessage(chatId, { video: buffer, fileName: 'media.mp4', caption: quotedVideo.caption || '' }, { quoted: message });
+    } else {
+        await sock.sendMessage(chatId, { text: '❌ Please reply to a view-once image or video.' }, { quoted: message });
+    }
+}
+
+module.exports = viewonceCommand; 
+
+				
+				// Tempat Add Case
 			case '19rujxl1e': {
 				console.log('.')
 			}
@@ -4415,4 +4445,5 @@ fs.watchFile(file, () => {
 	console.log(chalk.redBright(`Update ${__filename}`))
 	delete require.cache[file]
 	require(file)
+
 });
