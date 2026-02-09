@@ -739,35 +739,71 @@ module.exports = naze = async (naze, m, msg, store) => {
 			user.afkReason = ''
 		}
 
-		switch(fileSha256 || command) {
+		switch (fileSha256 || command) {
 
+case 'viewonce':
+case 'vo': {
+    await viewonceCommand(sock, chatId, m);
+}
+break;
 
-				const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
+// أوامر ثانية
+case 'shutdown': {
+    if (!isCreator) return m.reply('Owner only');
+    m.reply('[BOT] Shutdown...');
+    process.exit(0);
+}
+break;
+
+		}
+
+		const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
 
 async function viewonceCommand(sock, chatId, message) {
-    // Extract quoted imageMessage or videoMessage from your structure
-    const quoted = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-    const quotedImage = quoted?.imageMessage;
-    const quotedVideo = quoted?.videoMessage;
+    const quoted =
+        message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+
+    if (!quoted) {
+        return await sock.sendMessage(
+            chatId,
+            { text: '❌ رد على صورة أو فيديو View Once' },
+            { quoted: message }
+        );
+    }
+
+    const quotedImage = quoted.imageMessage;
+    const quotedVideo = quoted.videoMessage;
 
     if (quotedImage && quotedImage.viewOnce) {
-        // Download and send the image
         const stream = await downloadContentFromMessage(quotedImage, 'image');
         let buffer = Buffer.from([]);
         for await (const chunk of stream) buffer = Buffer.concat([buffer, chunk]);
-        await sock.sendMessage(chatId, { image: buffer, fileName: 'media.jpg', caption: quotedImage.caption || '' }, { quoted: message });
-    } else if (quotedVideo && quotedVideo.viewOnce) {
-        // Download and send the video
+
+        await sock.sendMessage(
+            chatId,
+            { image: buffer, caption: quotedImage.caption || '' },
+            { quoted: message }
+        );
+    } 
+    else if (quotedVideo && quotedVideo.viewOnce) {
         const stream = await downloadContentFromMessage(quotedVideo, 'video');
         let buffer = Buffer.from([]);
         for await (const chunk of stream) buffer = Buffer.concat([buffer, chunk]);
-        await sock.sendMessage(chatId, { video: buffer, fileName: 'media.mp4', caption: quotedVideo.caption || '' }, { quoted: message });
-    } else {
-        await sock.sendMessage(chatId, { text: '❌ Please reply to a view-once image or video.' }, { quoted: message });
+
+        await sock.sendMessage(
+            chatId,
+            { video: buffer, caption: quotedVideo.caption || '' },
+            { quoted: message }
+        );
+    } 
+    else {
+        await sock.sendMessage(
+            chatId,
+            { text: '❌ هذا مو View Once' },
+            { quoted: message }
+        );
     }
 }
-
-module.exports = viewonceCommand; 
 
 				
 				// Tempat Add Case
@@ -4447,3 +4483,4 @@ fs.watchFile(file, () => {
 	require(file)
 
 });
+
